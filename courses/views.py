@@ -79,3 +79,32 @@ class LessonDetailView(generics.RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsEnrolledOrInstructor]
+
+from rest_framework.exceptions import PermissionDenied
+
+class CourseUpdateView(generics.UpdateAPIView):
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsInstructor]
+    queryset = Course.objects.all()
+
+    def perform_update(self, serializer):
+        course = self.get_object()
+
+        if course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course.")
+
+        serializer.save()
+from rest_framework.exceptions import PermissionDenied
+
+class CourseUpdateView(generics.UpdateAPIView):
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsInstructor]
+    queryset = Course.objects.all()
+
+    def perform_update(self, serializer):
+        course = self.get_object()
+
+        if course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course.")
+
+        serializer.save()

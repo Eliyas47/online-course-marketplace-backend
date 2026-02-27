@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Course, Module, Lesson
-
+from .models import Category, Course, Module, Lesson, LessonProgress
 
 # ----------------------------
 # Lesson Serializer
@@ -31,3 +30,14 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = "__all__"
+
+
+
+
+
+
+class LessonProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonProgress
+        fields = "__all__"
+        read_only_fields = ["student"]

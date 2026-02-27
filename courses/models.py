@@ -49,7 +49,8 @@ class Lesson(models.Model):
 
     class Meta:
         ordering = ["order"]
-def __str__(self):
+
+    def __str__(self):
         return f"{self.section.course.title} - {self.section.title} - {self.title}"
 
 class Module(models.Model):
@@ -66,3 +67,24 @@ class Module(models.Model):
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
+
+
+class LessonProgress(models.Model):
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lesson_progress"
+    )
+    lesson = models.ForeignKey(
+        Lesson,
+        on_delete=models.CASCADE,
+        related_name="progress"
+    )
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("student", "lesson")
+
+    def __str__(self):
+        return f"{self.student.email} - {self.lesson.title}"
