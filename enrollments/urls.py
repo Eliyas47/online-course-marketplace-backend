@@ -2,10 +2,12 @@ from django.urls import path
 from .views import CourseProgressView, EnrollCourseView
 from enrollments import views
 from .views import MarkLessonCompleteView
+from .views import CourseProgressView
 urlpatterns = [
     path('enroll/', views.EnrollCourseView.as_view(), name='enroll-course'),
     path("progress/", MarkLessonCompleteView.as_view()),
     path("progress/<int:pk>/", CourseProgressView.as_view()),
+    path("progress/<int:course_id>/", CourseProgressView.as_view())
 ]
 
 from rest_framework.routers import DefaultRouter

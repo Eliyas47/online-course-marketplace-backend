@@ -8,3 +8,4 @@ admin.site.register(Section)
 admin.site.register(Lesson)
 admin.site.register(Module)
 admin.site.register(LessonProgress)
+

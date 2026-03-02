@@ -88,3 +88,8 @@ class LessonProgress(models.Model):
 
     def __str__(self):
         return f"{self.student.email} - {self.lesson.title}"
+    
+from django.db.models import Avg
+
+def average_rating(self):
+    return self.reviews.aggregate(avg=Avg("rating"))["avg"] or 0

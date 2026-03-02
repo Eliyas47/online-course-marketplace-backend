@@ -1,110 +1,131 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from .models import Course
-from .serializers import CourseSerializer
-from accounts.permissions import IsInstructor
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
+from django.db.models import Sum
 
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-from .models import Course
-from .serializers import CourseSerializer
+from .models import Course, Module, Lesson
+from .serializers import CourseSerializer, ModuleSerializer, LessonSerializer
 from .permissions import IsEnrolledOrInstructor
+from accounts.permissions import IsInstructor
+from enrollments.models import Enrollment
+from payments.models import Payment
 
-# Public course list
+
+# =====================================
+# Optimized Base Queryset for Courses
+# =====================================
+optimized_course_queryset = Course.objects.select_related(
+    "instructor",
+    "category"
+).prefetch_related(
+    "sections",
+    "reviews"
+)
+
+
+# =====================================
+# Public Course List
+# =====================================
 class CourseListView(generics.ListAPIView):
-    queryset = Course.objects.filter(is_published=True)
+    queryset = optimized_course_queryset.filter(is_published=True)
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-# Course detail
+# =====================================
+# Course Detail
+# =====================================
 class CourseDetailView(generics.RetrieveAPIView):
-    queryset = Course.objects.filter(is_published=True)
+    queryset = optimized_course_queryset.filter(is_published=True)
     serializer_class = CourseSerializer
 
 
-# Instructor create course
+# =====================================
+# Instructor Create Course
+# =====================================
 class CourseCreateView(generics.CreateAPIView):
     serializer_class = CourseSerializer
-    permission_classes = [IsInstructor]
-
-    def perform_create(self, serializer):
-        serializer.save(instructor=self.request.user)
-
-
-
-class CourseLearnView(generics.RetrieveAPIView):
-    queryset = Course.objects.filter(is_published=True)
-    serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated, IsEnrolledOrInstructor]
-
-from rest_framework.permissions import IsAuthenticated
-from accounts.permissions import IsInstructor
-from .models import Module
-from .serializers import ModuleSerializer
-
-
-class CreateModuleView(generics.CreateAPIView):
-    serializer_class = ModuleSerializer
     permission_classes = [IsAuthenticated, IsInstructor]
 
     def perform_create(self, serializer):
         serializer.save(instructor=self.request.user)
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-from .models import Module, Lesson
-from .serializers import ModuleSerializer, LessonSerializer
 
 
-# ----------------------------
+# =====================================
+# Learn Course (Only Enrolled or Instructor)
+# =====================================
+class CourseLearnView(generics.RetrieveAPIView):
+    queryset = optimized_course_queryset.filter(is_published=True)
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsEnrolledOrInstructor]
+
+
+# =====================================
+# Update Course
+# =====================================
+class CourseUpdateView(generics.UpdateAPIView):
+    serializer_class = CourseSerializer
+    permission_classes = [IsAuthenticated, IsInstructor]
+    queryset = Course.objects.all()
+
+    def perform_update(self, serializer):
+        course = self.get_object()
+
+        if course.instructor != self.request.user:
+            raise PermissionDenied("You do not own this course.")
+
+        serializer.save()
+
+
+# =====================================
 # Create Module
-# ----------------------------
+# =====================================
 class CreateModuleView(generics.CreateAPIView):
     queryset = Module.objects.all()
     serializer_class = ModuleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsInstructor]
 
 
-# ----------------------------
+# =====================================
 # Create Lesson
-# ----------------------------
+# =====================================
 class CreateLessonView(generics.CreateAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated]
-from .permissions import IsEnrolledOrInstructor
 
 
+# =====================================
+# Lesson Detail
+# =====================================
 class LessonDetailView(generics.RetrieveAPIView):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsEnrolledOrInstructor]
 
-from rest_framework.exceptions import PermissionDenied
 
-class CourseUpdateView(generics.UpdateAPIView):
-    serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated, IsInstructor]
-    queryset = Course.objects.all()
+# =====================================
+# Instructor Dashboard
+# =====================================
+class InstructorDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def perform_update(self, serializer):
-        course = self.get_object()
+    def get(self, request):
+        courses = request.user.courses.all()
 
-        if course.instructor != self.request.user:
-            raise PermissionDenied("You do not own this course.")
+        total_students = Enrollment.objects.filter(
+            course__in=courses
+        ).count()
 
-        serializer.save()
-from rest_framework.exceptions import PermissionDenied
+        total_revenue = Payment.objects.filter(
+            course__in=courses,
+            status="completed"
+        ).aggregate(Sum("amount"))["amount__sum"] or 0
 
-class CourseUpdateView(generics.UpdateAPIView):
-    serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated, IsInstructor]
-    queryset = Course.objects.all()
-
-    def perform_update(self, serializer):
-        course = self.get_object()
-
-        if course.instructor != self.request.user:
-            raise PermissionDenied("You do not own this course.")
-
-        serializer.save()
+        return Response({
+            "total_courses": courses.count(),
+            "total_students": total_students,
+            "total_revenue": total_revenue
+        })

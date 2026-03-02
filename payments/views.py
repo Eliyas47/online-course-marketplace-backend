@@ -1,37 +1,39 @@
-from rest_framework import generics
+import uuid
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from rest_framework.exceptions import ValidationError
-from .models import Payment
-from .serializers import PaymentSerializer
 from courses.models import Course
 from enrollments.models import Enrollment
-from accounts.permissions import IsStudent
+from .models import Payment
 
 
-class CreatePaymentView(generics.CreateAPIView):
-    serializer_class = PaymentSerializer
-    permission_classes = [IsAuthenticated, IsStudent]
+class CreatePaymentView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        course_id = self.request.data.get("course")
+    def post(self, request):
+        course_id = request.data.get("course")
         course = get_object_or_404(Course, id=course_id)
 
-        # Prevent duplicate enrollment
-        if Enrollment.objects.filter(
-            student=self.request.user,
-            course=course
-        ).exists():
-            raise ValidationError("Already enrolled.")
+        # prevent duplicate
+        if Enrollment.objects.filter(student=request.user, course=course).exists():
+            return Response({"error": "Already enrolled."}, status=400)
 
-        # Create payment
-        payment = serializer.save(
-            student=self.request.user,
-            amount=course.price
+        payment = Payment.objects.create(
+            student=request.user,
+            course=course,
+            amount=course.price,
+            status="completed",
+            transaction_id=uuid.uuid4()
         )
 
-        # Auto create enrollment
         Enrollment.objects.create(
-            student=self.request.user,
+            student=request.user,
             course=course
         )
+
+        return Response({
+            "message": "Payment successful",
+            "transaction_id": payment.transaction_id
+        }, status=status.HTTP_201_CREATED)

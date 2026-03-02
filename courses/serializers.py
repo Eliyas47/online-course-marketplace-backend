@@ -25,15 +25,14 @@ class ModuleSerializer(serializers.ModelSerializer):
 # Course Serializer
 # ----------------------------
 class CourseSerializer(serializers.ModelSerializer):
-    modules = ModuleSerializer(many=True, read_only=True)
+    average_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = "__all__"
 
-
-
-
+    def get_average_rating(self, obj):
+        return obj.average_rating()
 
 
 class LessonProgressSerializer(serializers.ModelSerializer):
