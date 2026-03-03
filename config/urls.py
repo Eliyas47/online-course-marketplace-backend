@@ -21,7 +21,8 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.contrib import admin
+from django.http import HttpResponse
+
 
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
@@ -41,7 +42,10 @@ schema_view = get_schema_view(
 @permission_classes([IsAuthenticated])
 def protected_view(request):
     return JsonResponse({"message": "You are authenticated!"})
+def home(request):
+    return HttpResponse("Online Course Marketplace API is running 🚀")
 urlpatterns = [
+    path("", home),
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/protected/", protected_view),
