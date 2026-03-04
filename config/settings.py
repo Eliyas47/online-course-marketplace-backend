@@ -150,3 +150,16 @@ REST_FRAMEWORK = {
 # =========================
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+
+
+if os.environ.get("RESET_ADMIN_PASSWORD") == "True":
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        user = User.objects.get(username="admin")
+        user.set_password("NewStrongPass123")
+        user.save()
+        print("Admin password reset successfully")
+    except User.DoesNotExist:
+        print("Admin user does not exist")
