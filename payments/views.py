@@ -9,8 +9,16 @@ from enrollments.models import Enrollment
 from .models import Payment
 
 
+from .serializers import PaymentSerializer
+
+
 class CreatePaymentView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        payments = Payment.objects.filter(student=request.user).order_by('-created_at')
+        serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data)
 
     def post(self, request):
         course_id = request.data.get("course")

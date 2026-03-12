@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from certificates.models import Certificate
 from courses import permissions
 from .models import Enrollment
-from .serializers import EnrollmentSerializer, LessonProgressSerializer
+from .serializers import EnrollmentSerializer, LessonProgressSerializer, MyEnrollmentSerializer
 from accounts.permissions import IsStudent
 from rest_framework.exceptions import ValidationError
 from courses.models import LessonProgress
@@ -23,6 +23,13 @@ from courses.models import Course, Lesson
 from .models import Enrollment
 from courses.models import LessonProgress
 
+
+class MyCoursesView(generics.ListAPIView):
+    serializer_class = MyEnrollmentSerializer
+    permission_classes = [IsAuthenticated, IsStudent]
+
+    def get_queryset(self):
+        return Enrollment.objects.filter(student=self.request.user).select_related('course')
 
 
 class EnrollCourseView(generics.CreateAPIView):

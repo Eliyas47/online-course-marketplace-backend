@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission
+from enrollments.models import Enrollment
 
 
 class IsInstructorOrReadOnly(BasePermission):
@@ -28,37 +29,13 @@ class IsInstructorOrReadOnly(BasePermission):
 
         # Students cannot POST
         return False
-    
-from rest_framework.permissions import BasePermission
-from enrollments.models import Enrollment
-
-
-class IsEnrolledOrInstructor(BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        user = request.user
-
-        # Admin can access everything
-        if user.role == "admin":
-            return True
-
-        # Instructor who owns the course
-        if obj.instructor == user:
-            return True
-
-        # Student enrolled in course
-        return Enrollment.objects.filter(
-            student=user,
-            course=obj
-        ).exists()
-from rest_framework.permissions import BasePermission
-from enrollments.models import Enrollment
 
 
 class IsEnrolledOrInstructor(BasePermission):
     """
+    - Admin can access everything
     - Instructor who owns the course can access
-    - Student enrolled in the course can access
+    - Student enrolled in the course can access (if verified)
     """
 
     def has_object_permission(self, request, view, obj):
@@ -68,14 +45,27 @@ class IsEnrolledOrInstructor(BasePermission):
         if not user.is_authenticated:
             return False
 
-        course = obj.module.course
+        # Admin can access everything
+        if getattr(user, 'role', None) == "admin":
+            return True
+
+        # Determine the course object depending on if obj is a Course or a Lesson
+        if hasattr(obj, 'module'):
+            course = obj.module.course
+        else:
+            course = obj
 
         # Instructor who owns the course
         if course.instructor == user:
             return True
 
-        # Student enrolled
-        return Enrollment.objects.filter(
+        # Student enrolled in course
+        enrollment = Enrollment.objects.filter(
             student=user,
             course=course
-        ).exists()
+        ).first()
+        
+        if enrollment:
+            return user.is_active  # Only active (verified) users can access
+            
+        return False

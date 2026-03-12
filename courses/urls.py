@@ -1,16 +1,19 @@
 from django.urls import path
-from .views import CourseListView, CourseDetailView, CourseCreateView, InstructorDashboardView, LessonDetailView
-from .views import CourseLearnView
-from .views import CreateModuleView, CreateLessonView
+from .views import (
+    CourseListView, CourseDetailView, CourseCreateView, CourseUpdateView,
+    InstructorDashboardView, LessonDetailView, CourseLearnView,
+    CreateModuleView, CreateLessonView
+)
 
 
 urlpatterns = [
     path("", CourseListView.as_view(), name="course-list"),
-    path("<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
+    path("<uuid:pk>/", CourseDetailView.as_view(), name="course-detail"),
+    path("<uuid:pk>/update/", CourseUpdateView.as_view(), name="course-update"),
+    path("<uuid:pk>/learn/", CourseLearnView.as_view(), name="course-learn"),
     path("create/", CourseCreateView.as_view(), name="course-create"),
-    path("<int:pk>/learn/", CourseLearnView.as_view(), name="course-learn"),
-    path("modules/create/", CreateModuleView.as_view()),
-    path("lessons/create/", CreateLessonView.as_view()),
-    path("lessons/<int:pk>/", LessonDetailView.as_view()),
-    path("dashboard/", InstructorDashboardView.as_view()),
+    path("modules/create/", CreateModuleView.as_view(), name="module-create"),
+    path("lessons/create/", CreateLessonView.as_view(), name="lesson-create"),
+    path("lessons/<uuid:pk>/", LessonDetailView.as_view(), name="lesson-detail"),
+    path("dashboard/", InstructorDashboardView.as_view(), name="instructor-dashboard"),
 ]

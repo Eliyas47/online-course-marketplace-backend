@@ -3,6 +3,14 @@ import os
 import dj_database_url
 from dotenv import load_dotenv
 
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),  # Making it last 24 hours for easier testing
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
 # =========================
 # Base
 # =========================
@@ -99,7 +107,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
+            "NAME": BASE_DIR / "postgresql://online_course_db_4dgq_user:tnzScadnGuIFauQE8CohU5i79U2x97J1@dpg-d6jiqn9aae7s7396nra0-a.oregon-postgres.render.com/online_course_db_4dgq",
         }
     }
 
@@ -158,3 +166,9 @@ REST_FRAMEWORK = {
 # =========================
 
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+
+# =========================
+# Email Configuration
+# =========================
+# Output emails to the console for testing purposes
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

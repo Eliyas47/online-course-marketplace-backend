@@ -1,8 +1,13 @@
+import uuid
 from django.db import models
 from django.conf import settings
 
 
+# ----------------------------
+# Category Model
+# ----------------------------
 class Category(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
 
@@ -10,13 +15,22 @@ class Category(models.Model):
         return self.name
 
 
+# ----------------------------
+# Course Model
+# ----------------------------
 class Course(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     instructor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="courses"
     )
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="courses"
+    )
     title = models.CharField(max_length=255)
     description = models.TextField()
     thumbnail = models.ImageField(upload_to="courses/")
@@ -28,48 +42,50 @@ class Course(models.Model):
     def __str__(self):
         return self.title
 
-
-class Section(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
-    title = models.CharField(max_length=255)
-    order = models.IntegerField()
-
-    class Meta:
-        ordering = ["order"]
+    # temporary rating (until review system added)
+    def average_rating(self):
+        return 0
 
 
-class Lesson(models.Model):
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lessons")
-    title = models.CharField(max_length=255)
-    video_url = models.URLField()
-    content = models.TextField(blank=True)
-    duration = models.IntegerField(help_text="Duration in minutes")
-    order = models.IntegerField()
-    is_preview = models.BooleanField(default=False)
-
-    class Meta:
-        ordering = ["order"]
-
-    def __str__(self):
-        return f"{self.section.course.title} - {self.section.title} - {self.title}"
-
+# ----------------------------
+# Module Model
+# ----------------------------
 class Module(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(
         Course,
         on_delete=models.CASCADE,
         related_name="modules"
     )
     title = models.CharField(max_length=255)
-    order = models.PositiveIntegerField(default=1)
-
-    class Meta:
-        ordering = ["order"]
 
     def __str__(self):
         return f"{self.course.title} - {self.title}"
 
 
+# ----------------------------
+# Lesson Model
+# ----------------------------
+class Lesson(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    module = models.ForeignKey(
+        Module,
+        on_delete=models.CASCADE,
+        related_name="lessons"
+    )
+    title = models.CharField(max_length=255)
+    content = models.TextField(blank=True)
+    video_url = models.URLField(blank=True)
+
+    def __str__(self):
+        return self.title
+
+
+# ----------------------------
+# Lesson Progress
+# ----------------------------
 class LessonProgress(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -87,9 +103,4 @@ class LessonProgress(models.Model):
         unique_together = ("student", "lesson")
 
     def __str__(self):
-        return f"{self.student.email} - {self.lesson.title}"
-    
-from django.db.models import Avg
-
-def average_rating(self):
-    return self.reviews.aggregate(avg=Avg("rating"))["avg"] or 0
+        return f"{self.student} - {self.lesson}"
