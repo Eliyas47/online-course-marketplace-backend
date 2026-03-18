@@ -65,6 +65,7 @@ def home(request):
     return HttpResponse("Online Course Marketplace API is running 🚀")
 urlpatterns = [
     path("", home),
+    path("api", api_root),
     path("api/", api_root),
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
