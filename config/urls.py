@@ -17,13 +17,10 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include, re_path
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.http import HttpResponse
-
-
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -42,10 +39,33 @@ schema_view = get_schema_view(
 @permission_classes([IsAuthenticated])
 def protected_view(request):
     return JsonResponse({"message": "You are authenticated!"})
+
+
+@api_view(["GET"])
+def api_root(request):
+    return JsonResponse(
+        {
+            "message": "Welcome to Online Course Marketplace API",
+            "endpoints": {
+                "auth": "/api/auth/",
+                "courses": "/api/courses/",
+                "enrollments": "/api/enrollments/",
+                "payments": "/api/payments/",
+                "certificates": "/api/certificates/",
+                "token": "/api/token/",
+                "token_refresh": "/api/token/refresh/",
+                "swagger": "/swagger/",
+                "redoc": "/redoc/",
+            },
+        }
+    )
+
+
 def home(request):
     return HttpResponse("Online Course Marketplace API is running 🚀")
 urlpatterns = [
     path("", home),
+    path("api/", api_root),
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/protected/", protected_view),
