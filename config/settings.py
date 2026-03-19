@@ -174,5 +174,6 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
     "https://learnhub-coursemarketplace.vercel.app/"
 ]
